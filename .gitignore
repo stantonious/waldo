@@ -1,0 +1,10 @@
+
+.vscode/
+bsps/
+build/
+deps/
+images/
+libs/
+*.code-workspace
+opencd.tcl
+templates/
