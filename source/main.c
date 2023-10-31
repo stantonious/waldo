@@ -108,12 +108,12 @@ int main()
 
     /* Create the tasks. */
     /* Create the lidar task */
+    result = create_mag_task(&glb_i2c,&i2c_semaphore);
     // result = create_lidar_task(&glb_i2c,&i2c_semaphore);
     result = create_scanner_task(&glb_i2c, &i2c_semaphore);
 
     cyhal_system_delay_us(10000);
 
-    result = create_mag_task(&glb_i2c,&i2c_semaphore);
 
     /* If the task creation failed stop the program execution */
     CY_ASSERT(result == CY_RSLT_SUCCESS);

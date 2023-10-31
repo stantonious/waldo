@@ -20,4 +20,6 @@
 ********************************************************************************/
 cy_rslt_t create_scanner_task(cyhal_i2c_t *i2c, SemaphoreHandle_t *i2c_semaphore);
 
+void auto_align(uint8_t xy_step_idx,uint8_t yz_step_idx);
+
 #endif /* SCANNER_TASK_H_ */

@@ -19,9 +19,10 @@
 ********************************************************************************/
 cy_rslt_t create_mag_task(cyhal_i2c_t* i2c,SemaphoreHandle_t* i2c_semaphore);
 
-static float X, Y, Z, T;
+static float X, Y, Z, R, T, N;
 static float azimuth, polar;
 
+float get_R();
 
 
 #endif /* MOTION_TASK_H_ */

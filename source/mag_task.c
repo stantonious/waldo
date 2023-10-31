@@ -59,7 +59,7 @@ static void update_mag_vals(cyhal_i2c_t *i2c)
     cy_rslt_t result = CY_RSLT_SUCCESS;
     static uint8_t buf[23] = {0b00000000};
 
-    result = cyhal_i2c_master_read(i2c, MAG_ADDR, buf, 23, 0, true);
+    result = cyhal_i2c_master_read(i2c, MAG_ADDR, buf, 23, 10, true);
     if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
     {
         //   printf("doh");
@@ -100,9 +100,9 @@ static void update_mag_vals(cyhal_i2c_t *i2c)
             Y = -Y if negate_field else Y
             Z = -Z if negate_field else Z
         */
-        float R = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2));
+        R = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2));
 
-        float _N = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2)) * FULL_MULT;
+        N = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2)) * FULL_MULT;
         X = _X * FULL_MULT;
         Y = _Y * FULL_MULT;
         T = _T;
@@ -195,6 +195,10 @@ cy_rslt_t init_mag(cyhal_i2c_t *i2c)
     }
 
     return result;
+}
+
+float get_R(){
+    return R;
 }
 
 /*

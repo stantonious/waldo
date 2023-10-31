@@ -13,8 +13,10 @@
 
 cy_rslt_t init_motors();
 
-int8_t step_clockwise(uint8_t step_idx,int motor_id);
+uint8_t step_clockwise(uint8_t step_idx,int motor_id);
 
-int8_t step_anticlockwise(uint8_t step_idx,int motor_id);
+uint8_t step_anticlockwise(uint8_t step_idx,int motor_id);
+
+uint8_t step(uint8_t step_idx,int motor_id,bool clockwise, int num);
 
 #endif
