@@ -3,32 +3,17 @@
 #include "cyhal.h"
 #include "cybsp.h"
 #include "cy_retarget_io.h"
-#include "lidar_task.h"
 #include "mag_task.h"
+#include "motor.h"
 #include "scanner_task.h"
 
 /* RTOS header file */
 #include "cyabs_rtos.h"
-#if defined(COMPONENT_FREERTOS)
 #include <FreeRTOS.h>
 #include <task.h>
 
-#elif defined(COMPONENT_THREADX)
-#include "tx_api.h"
-#include "tx_initialize.h"
-#endif
 
-/* TCP server task header file. */
 #include "tcp_server.h"
-#include "motor.h"
-
-/* Include serial flash library and QSPI memory configurations only for the
- * kits that require the Wi-Fi firmware to be loaded in external QSPI NOR flash.
- */
-#if defined(CY_DEVICE_PSOC6A512K)
-#include "cy_serial_flash_qspi.h"
-#include "cycfg_qspi_memslot.h"
-#endif
 
 /*******************************************************************************
  * Macros
@@ -39,14 +24,9 @@
 #define TCP_SERVER_TASK_PRIORITY (1)
 #endif
 
-/* Queue lengths of message queues used in this project */
-#define SINGLE_ELEMENT_QUEUE (1u)
-
 /*******************************************************************************
  * Global Variables
  ********************************************************************************/
-/* Queue handler */
-cy_queue_t led_command_q;
 
 /* This enables RTOS aware debugging. */
 volatile int uxTopUsedPriority;
@@ -80,37 +60,6 @@ void init_i2c()
     /* Create binary semaphore and suspend the task upon failure */
     i2c_semaphore = xSemaphoreCreateBinary();
     xSemaphoreGive(i2c_semaphore);
-}
-
-void probe()
-{
-    cy_rslt_t rval;
-
-    // Setup the screen and print the header
-    printf("\n\n   ");
-    for (unsigned int i = 0; i < 0x10; i++)
-    {
-        printf("%02X ", i);
-    }
-
-    // Iterate through the address starting at 0x00
-    for (uint32_t i2caddress = 0; i2caddress < 0x80; i2caddress++)
-    {
-        if (i2caddress % 0x10 == 0)
-            printf("\n%02X ", (unsigned int)i2caddress);
-
-        uint8_t buffer[1] = {0}; // You can change this to your specific data to send
-        rval = cyhal_i2c_master_read(&glb_i2c, i2caddress, buffer, 0, 100, true);
-        if (rval == CY_RSLT_SUCCESS) // If you get ACK, then print the address
-        {
-            printf("%02X ", (unsigned int)i2caddress);
-        }
-        else //  Otherwise print a --
-        {
-            printf("-- ");
-        }
-    }
-    printf("\n");
 }
 
 /*******************************************************************************
@@ -157,23 +106,9 @@ int main()
 
     // probe();
 
-#if defined(CY_DEVICE_PSOC6A512K)
-    const uint32_t bus_frequency = 50000000lu;
-    cy_serial_flash_qspi_init(smifMemConfigs[0], CYBSP_QSPI_D0, CYBSP_QSPI_D1, CYBSP_QSPI_D2, CYBSP_QSPI_D3, NC, NC, NC, NC, CYBSP_QSPI_SCK, CYBSP_QSPI_SS, bus_frequency);
-    cy_serial_flash_qspi_enable_xip(true);
-#endif
-
-    /* Initialize a queue to receive command. */
-    cy_rtos_queue_init(&led_command_q, SINGLE_ELEMENT_QUEUE, sizeof(uint8_t));
-
-#if defined(COMPONENT_FREERTOS)
-
     /* Create the tasks. */
     /* Create the lidar task */
     // result = create_lidar_task(&glb_i2c,&i2c_semaphore);
-
-
-
     result = create_scanner_task(&glb_i2c, &i2c_semaphore);
 
     cyhal_system_delay_us(10000);
@@ -191,24 +126,6 @@ int main()
     /* Should never get here. */
     CY_ASSERT(0);
 
-#elif defined(COMPONENT_THREADX)
-    /*
-     * Start the ThreadX kernel.
-     * This routine never returns.
-     */
-
-    tx_kernel_enter();
-
-    /* Should never get here. */
-    CY_ASSERT(0);
-#endif
 }
-
-#if defined(COMPONENT_THREADX)
-void application_start(void)
-{
-    tcp_server_task(NULL);
-}
-#endif
 
 /* [] END OF FILE */

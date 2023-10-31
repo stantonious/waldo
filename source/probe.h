@@ -1,9 +1,11 @@
-#ifndef TCP_SERVER_H_
-#define TCP_SERVER_H_
+#ifndef PROBE_H_
+#define PROBE_H_
+
+#include "cyhal.h"
 
 /*******************************************************************************
 * Function Prototypes
 ********************************************************************************/
-void tcp_server_task(void *arg);
+void probe(cyhal_i2c_t* i2c);
 
-#endif /* TCP_SERVER_H_ */
+#endif 
