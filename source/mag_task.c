@@ -139,6 +139,7 @@ static void mag_task(void *pvParameters)
         xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
         xSemaphoreTake(*sema, portMAX_DELAY);
         update_mag_vals(i2c);
+        vTaskDelay(5);
         xSemaphoreGive(*sema);
     }
 }
@@ -200,105 +201,3 @@ cy_rslt_t init_mag(cyhal_i2c_t *i2c)
 float get_R(){
     return R;
 }
-
-/*
-void _mag_cb(void *handler_arg, cyhal_gpio_event_t event)
-{
-    cy_rslt_t result = CY_RSLT_SUCCESS;
-    static uint8_t buf[23] = {0b00000000};
-
-    xSemaphoreTakeFromISR(*i2c_semaphore_ptr, portMAX_DELAY);
-    result = cyhal_i2c_master_read(handler_arg, MAG_ADDR, buf, 23, 0, true);
-    xSemaphoreGiveFromISR(*i2c_semaphore_ptr,portMAX_DELAY);
-    if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
-    {
-        //   printf("doh");
-    }
-    else
-    {
-        X = ((buf[0] << 8) | (buf[4] & 0xF0)) >> 4;
-        Y = ((buf[1] << 8) | ((buf[4] & 0x0F) << 4)) >> 4;
-        Z = ((buf[2] << 8) | ((buf[5] & 0x0F) << 4)) >> 4;
-        T = (buf[3] << 4) | ((buf[5] >> 6) << 1);
-
-        if (X & 0x800)
-        {
-            X = (X ^ 0xFFF) + 1;
-            X = -(X & 0x7FF);
-        }
-        if (Y & 0x800)
-        {
-            Y = (Y ^ 0xFFF) + 1;
-            Y = -(Y & 0x7FF);
-        }
-        if (Z & 0x800)
-        {
-
-            Z = (Z ^ 0xFFF) + 1;
-            Z = -(Z & 0x7FF);
-        }
-            float R = sqrt(pow(X,2)+pow(Y,2)+pow(Z,2));
-
-
-            float _N = sqrt(pow(X,2) +pow(Y,2) + pow(Z,2)) * FULL_MULT;
-            float _X = X* FULL_MULT;
-            float _Y = Y* FULL_MULT;
-            float _Z = Z* FULL_MULT;
-            _T = T;
-            _T = (T - TEMP_OFFSET) * TEMP_MULT + TEMP_25;
-
-            theta = acos((float)Z/(float)R);
-            phi = atan2((float)Y,(float)X);
-
-            azimuth = atan2((float)Y,(float)X);
-            polar = atan2((float)Z,sqrt(pow((float)X,2) + pow((float)Y,2)));
-
-    }
-
-    xSemaphoreTakeFromISR(*i2c_semaphore_ptr, portMAX_DELAY);
-    result = cyhal_i2c_master_write(handler_arg, MAG_ADDR, &TRIG_BYTE, 1, 0, true);
-    xSemaphoreGiveFromISR(*i2c_semaphore_ptr,portMAX_DELAY);
-    if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
-    {
-        // printf("doh");
-        cnt+=3;
-
-    }
-    cnt++;
-}
-
-static cy_rslt_t mag_init(cyhal_i2c_t *i2c)
-{
-
-    cy_rslt_t result = CY_RSLT_SUCCESS;
-    static cyhal_gpio_callback_data_t mag_cb_t;
-
-    mag_cb_t.callback = &_mag_cb;
-    mag_cb_t.callback_arg = i2c;
-    result = cyhal_gpio_init(MAG_GPIO, CYHAL_GPIO_DIR_INPUT, CYHAL_GPIO_DRIVE_PULLUP, 1);
-    if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
-    {
-        printf("doh");
-    }
-    cyhal_gpio_register_callback(MAG_GPIO, &mag_cb_t);
-    cyhal_gpio_enable_event(MAG_GPIO, CYHAL_GPIO_IRQ_FALL, 7u, true);
-
-
-    uint8_t cmd[3] = {0b00000000};
-    result = cyhal_i2c_master_mem_write(i2c, MAG_ADDR, MAG_CONF_ADDR, 1, cmd, 1, 0);
-    if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
-    {
-        printf("doh");
-    }
-
-    cmd[0] = 0b00011001;
-    // cmd[0] = 0b00001001;
-    result = cyhal_i2c_master_mem_write(i2c, MAG_ADDR, MAG_MOD1_ADDR, 1, cmd, 1, 0);
-    if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
-    {
-        printf("doh");
-    }
-
-    return result;
-}
-*/

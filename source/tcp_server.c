@@ -25,6 +25,9 @@
 /* Standard C header files */
 #include <inttypes.h>
 
+#define TCP_SERVER_TASK_STACK_SIZE (1024 * 5)
+#define TCP_SERVER_TASK_PRIORITY (1)
+
 /*******************************************************************************
  * Macros
  ********************************************************************************/
@@ -71,10 +74,12 @@
 
 /* Length of the LED ON/OFF command issued from the TCP server. */
 #define TCP_LED_CMD_LEN (1)
+#define MEAS_BATCH_LEN sizeof(measurement_batch)
 
 /* Debounce delay for user button. */
 #define DEBOUNCE_DELAY_MS (50)
 
+extern cy_queue_t meas_q;
 /*******************************************************************************
  * Function Prototypes
  ********************************************************************************/
@@ -116,93 +121,41 @@ bool client_connected;
  *******************************************************************************/
 void tcp_server_task(void *arg)
 {
+    init_wifi();
+    cyhal_gpio_toggle(CYBSP_USER_LED);
     cy_rslt_t result;
 
-    cy_wcm_config_t wifi_config = {.interface = WIFI_INTERFACE_TYPE};
-
+    measurement_batch meas_batch;
     /* Variable to store number of bytes sent over TCP socket. */
     uint32_t bytes_sent = 0;
-
-    /* Variable to receive LED ON/OFF command from the user button ISR. */
-    uint32_t led_state_cmd = 0;
-
-    /* Initialize Wi-Fi connection manager. */
-    result = cy_wcm_init(&wifi_config);
-
-    if (result != CY_RSLT_SUCCESS)
-    {
-        printf("Wi-Fi Connection Manager initialization failed! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
-        CY_ASSERT(0);
-    }
-    printf("Wi-Fi Connection Manager initialized.\r\n");
-
-    /* Connect to Wi-Fi AP */
-    result = connect_to_wifi_ap();
-    if (result != CY_RSLT_SUCCESS)
-    {
-        printf("\n Failed to connect to Wi-Fi AP! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
-        CY_ASSERT(0);
-    }
-
-    /* Initialize secure socket library. */
-    result = cy_socket_init();
-    if (result != CY_RSLT_SUCCESS)
-    {
-        printf("Secure Socket initialization failed! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
-        CY_ASSERT(0);
-    }
-    printf("Secure Socket initialized\n");
-
-    /* Create TCP server socket. */
-    result = create_tcp_server_socket();
-    if (result != CY_RSLT_SUCCESS)
-    {
-        printf("Failed to create socket! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
-        CY_ASSERT(0);
-    }
-
-    /* Start listening on the TCP server socket. */
-    result = cy_socket_listen(server_handle, TCP_SERVER_MAX_PENDING_CONNECTIONS);
-    if (result != CY_RSLT_SUCCESS)
-    {
-        cy_socket_delete(server_handle);
-        printf("cy_socket_listen returned error. Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
-        CY_ASSERT(0);
-    }
-    else
-    {
-        printf("===============================================================\n");
-        printf("Listening for incoming TCP client connection on Port: %d\n",
-               tcp_server_addr.port);
-    }
-
     while (true)
     {
-        /* Wait till the debounce period of the user button. */
-        cy_rtos_delay_milliseconds(DEBOUNCE_DELAY_MS);
-
         if (client_connected)
         {
-            /* Send the command to TCP client. */
-            result = cy_socket_send(client_handle, &led_state_cmd, TCP_LED_CMD_LEN,
-                                    CY_SOCKET_FLAGS_NONE, &bytes_sent);
+            result = cy_rtos_get_queue(&meas_q, &meas_batch, 1, false);
             if (result == CY_RSLT_SUCCESS)
             {
-                //TODO?
-            }
-            else
-            {
-                printf("Failed to send command to client. Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
-                if (result == CY_RSLT_MODULE_SECURE_SOCKETS_CLOSED)
+                result = cy_socket_send(client_handle, &meas_batch, MEAS_BATCH_LEN,
+                                        CY_SOCKET_FLAGS_NONE, &bytes_sent);
+                if (result == CY_RSLT_SUCCESS)
                 {
-                    /* Disconnect the socket. */
-                    cy_socket_disconnect(client_handle, 0);
-                    /* Delete the socket. */
-                    cy_socket_delete(client_handle);
+                    // TODO?
+                }
+                else
+                {
+                    printf("Failed to send command to client. Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
+                    if (result == CY_RSLT_MODULE_SECURE_SOCKETS_CLOSED)
+                    {
+                        /* Disconnect the socket. */
+                        cy_socket_disconnect(client_handle, 0);
+                        /* Delete the socket. */
+                        cy_socket_delete(client_handle);
+                    }
                 }
             }
+            /* Send the command to TCP client. */
         }
-
+        vTaskDelay(5);
     }
 }
 
@@ -546,4 +499,72 @@ static cy_rslt_t tcp_disconnection_handler(cy_socket_t socket_handle, void *arg)
     return result;
 }
 
-/* [] END OF FILE */
+cy_rslt_t init_wifi()
+{
+    cy_rslt_t result = 0;
+    cy_wcm_config_t wifi_config = {.interface = WIFI_INTERFACE_TYPE};
+
+    /* Initialize Wi-Fi connection manager. */
+    result = cy_wcm_init(&wifi_config);
+
+    if (result != CY_RSLT_SUCCESS)
+    {
+        printf("Wi-Fi Connection Manager initialization failed! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
+        CY_ASSERT(0);
+    }
+    printf("Wi-Fi Connection Manager initialized.\r\n");
+
+    /* Connect to Wi-Fi AP */
+    result = connect_to_wifi_ap();
+    if (result != CY_RSLT_SUCCESS)
+    {
+        printf("\n Failed to connect to Wi-Fi AP! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
+        CY_ASSERT(0);
+    }
+
+    /* Initialize secure socket library. */
+    result = cy_socket_init();
+    if (result != CY_RSLT_SUCCESS)
+    {
+        printf("Secure Socket initialization failed! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
+        CY_ASSERT(0);
+    }
+    printf("Secure Socket initialized\n");
+
+    /* Create TCP server socket. */
+    result = create_tcp_server_socket();
+    if (result != CY_RSLT_SUCCESS)
+    {
+        printf("Failed to create socket! Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
+        CY_ASSERT(0);
+    }
+
+    /* Start listening on the TCP server socket. */
+    result = cy_socket_listen(server_handle, TCP_SERVER_MAX_PENDING_CONNECTIONS);
+    if (result != CY_RSLT_SUCCESS)
+    {
+        cy_socket_delete(server_handle);
+        printf("cy_socket_listen returned error. Error code: 0x%08" PRIx32 "\n", (uint32_t)result);
+        CY_ASSERT(0);
+    }
+    else
+    {
+        printf("===============================================================\n");
+        printf("Listening for incoming TCP client connection on Port: %d\n",
+               tcp_server_addr.port);
+    }
+    return result;
+}
+
+cy_rslt_t create_tcp_task()
+{
+    BaseType_t status;
+    cy_rslt_t result;
+
+    /* Initialize the User LED */
+    result = cyhal_gpio_init(CYBSP_USER_LED, CYHAL_GPIO_DIR_OUTPUT,
+                             CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF);
+    status = xTaskCreate(tcp_server_task, "Network task", TCP_SERVER_TASK_STACK_SIZE, NULL,
+                         TCP_SERVER_TASK_PRIORITY, NULL);
+    return (status == pdPASS) ? CY_RSLT_SUCCESS : (cy_rslt_t)status;
+}

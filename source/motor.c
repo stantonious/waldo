@@ -3,7 +3,7 @@
 #include "cyhal.h"
 #include <stdio.h>
 
-#define STEPPER_DELAY_US 1000
+#define STEPPER_DELAY 2
 
 cyhal_gpio_psoc6_02_124_bga_t yz_motor_pins[NUM_MOTOR_PINS] = {P10_7, P10_6, P10_5, P10_4};
 cyhal_gpio_psoc6_02_124_bga_t xy_motor_pins[NUM_MOTOR_PINS] = {P9_7, P9_6, P9_5, P9_4};
@@ -35,7 +35,7 @@ uint8_t step_clockwise(uint8_t step_idx, int motor_id)
     uint8_t l_step_idx = (step_idx - 1) % STEP_SEQ_LEN;
     for (int i = 0; i < NUM_MOTOR_PINS; i++)
     {
-        cyhal_system_delay_us(STEPPER_DELAY_US);
+        vTaskDelay(STEPPER_DELAY);
         cyhal_gpio_write(pins[i], step_sequence[l_step_idx][i]);
     }
     return l_step_idx;
@@ -48,7 +48,7 @@ uint8_t step_anticlockwise(uint8_t step_idx, int motor_id)
     uint8_t l_step_idx = (step_idx + 1) % STEP_SEQ_LEN;
     for (int i = 0; i < NUM_MOTOR_PINS; i++)
     {
-        cyhal_system_delay_us(STEPPER_DELAY_US);
+        vTaskDelay(STEPPER_DELAY);
         cyhal_gpio_write(pins[i], step_sequence[l_step_idx][i]);
     }
     return l_step_idx;
@@ -86,7 +86,6 @@ uint8_t step(uint8_t step_idx, int motor_id, bool clockwise, int num)
     uint8_t idx=step_idx;
     for (int i = 0; i < num; i++)
     {
-        printf("wtf");
         if (clockwise) idx = step_clockwise(idx,motor_id);
         else idx = step_anticlockwise(idx,motor_id);
     }

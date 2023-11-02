@@ -12,17 +12,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
 
-
 #include "tcp_server.h"
-
-/*******************************************************************************
- * Macros
- ********************************************************************************/
-/* RTOS related macros for TCP server task. */
-#if defined(COMPONENT_FREERTOS)
-#define TCP_SERVER_TASK_STACK_SIZE (1024 * 5)
-#define TCP_SERVER_TASK_PRIORITY (1)
-#endif
 
 /*******************************************************************************
  * Global Variables
@@ -33,12 +23,14 @@ volatile int uxTopUsedPriority;
 
 static SemaphoreHandle_t i2c_semaphore;
 
+cy_queue_t meas_q;
+cy_queue_t scanner_command_data_q;
+
 static cyhal_i2c_t glb_i2c;
 static cyhal_i2c_cfg_t i2c_cfg = {
     .is_slave = false,
     .address = 0,
-    .frequencyhal_hz = 100000};
-
+    .frequencyhal_hz = 400000};
 
 void init_i2c()
 {
@@ -106,26 +98,24 @@ int main()
 
     // probe();
 
-    /* Create the tasks. */
-    /* Create the lidar task */
-    result = create_mag_task(&glb_i2c,&i2c_semaphore);
-    // result = create_lidar_task(&glb_i2c,&i2c_semaphore);
-    result = create_scanner_task(&glb_i2c, &i2c_semaphore);
-
-    cyhal_system_delay_us(10000);
-
+    /* Initialize a queue to receive command. */
+    cy_rtos_queue_init(&meas_q, 100u, sizeof(measurement_batch));
+    cy_rtos_queue_init(&scanner_command_data_q, 1u, sizeof(scanner_command_data_t));
 
     /* If the task creation failed stop the program execution */
     CY_ASSERT(result == CY_RSLT_SUCCESS);
-    xTaskCreate(tcp_server_task, "Network task", TCP_SERVER_TASK_STACK_SIZE, NULL,
-                TCP_SERVER_TASK_PRIORITY, NULL);
+
+    /* Create the tasks. */
+    result = create_tcp_task();
+    result = create_mag_task(&glb_i2c, &i2c_semaphore);
+    // result = create_lidar_task(&glb_i2c,&i2c_semaphore);
+    result = create_scanner_task(&glb_i2c, &i2c_semaphore);
 
     /* Start the FreeRTOS scheduler. */
     vTaskStartScheduler();
 
     /* Should never get here. */
     CY_ASSERT(0);
-
 }
 
 /* [] END OF FILE */
