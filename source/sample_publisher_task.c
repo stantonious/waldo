@@ -16,8 +16,7 @@
 /* Standard C header file */
 #include <string.h>
 
-/* TCP server task header file. */
-#include "tcp_server.h"
+#include "sample_publisher_task.h"
 
 /* IP address related header files. */
 #include "cy_nw_helper.h"
@@ -107,7 +106,7 @@ bool led_state = CYBSP_LED_STATE_OFF;
 bool client_connected;
 
 /*******************************************************************************
- * Function Name: tcp_server_task
+ * Function Name: sample_publisher_task
  *******************************************************************************
  * Summary:
  *  Task used to establish a connection to a TCP client.
@@ -119,7 +118,7 @@ bool client_connected;
  *  void
  *
  *******************************************************************************/
-void tcp_server_task(void *arg)
+void sample_publisher_task(void *arg)
 {
     init_wifi();
     cyhal_gpio_toggle(CYBSP_USER_LED);
@@ -556,7 +555,7 @@ cy_rslt_t init_wifi()
     return result;
 }
 
-cy_rslt_t create_tcp_task()
+cy_rslt_t create_sample_publisher_task()
 {
     BaseType_t status;
     cy_rslt_t result;
@@ -564,7 +563,7 @@ cy_rslt_t create_tcp_task()
     /* Initialize the User LED */
     result = cyhal_gpio_init(CYBSP_USER_LED, CYHAL_GPIO_DIR_OUTPUT,
                              CYHAL_GPIO_DRIVE_STRONG, CYBSP_LED_STATE_OFF);
-    status = xTaskCreate(tcp_server_task, "Network task", TCP_SERVER_TASK_STACK_SIZE, NULL,
+    status = xTaskCreate(sample_publisher_task, "Network task", TCP_SERVER_TASK_STACK_SIZE, NULL,
                          TCP_SERVER_TASK_PRIORITY, NULL);
     return (status == pdPASS) ? CY_RSLT_SUCCESS : (cy_rslt_t)status;
 }

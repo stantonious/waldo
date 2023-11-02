@@ -1,6 +1,6 @@
 
 #include "scanner_task.h"
-#include "motor.h"
+#include "uln2003.h"
 #include "cy_pdl.h"
 #include "cyhal.h"
 #include "cyabs_rtos.h"
@@ -11,9 +11,9 @@
 #include "cy_retarget_io.h"
 #include "core_cm4.h"
 #include "math.h"
-#include "lidar.h"
+#include "tf-luna.h"
 #include "mag_task.h"
-#include "tcp_server.h"
+#include "sample_publisher_task.h"
 
 extern cy_queue_t meas_q;
 extern cy_queue_t scanner_command_data_q;

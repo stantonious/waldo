@@ -4,15 +4,14 @@
 #include "cybsp.h"
 #include "cy_retarget_io.h"
 #include "mag_task.h"
-#include "motor.h"
 #include "scanner_task.h"
+#include "sample_publisher_task.h"
 
 /* RTOS header file */
 #include "cyabs_rtos.h"
 #include <FreeRTOS.h>
 #include <task.h>
 
-#include "tcp_server.h"
 
 /*******************************************************************************
  * Global Variables
@@ -24,7 +23,6 @@ volatile int uxTopUsedPriority;
 static SemaphoreHandle_t i2c_semaphore;
 
 cy_queue_t meas_q;
-cy_queue_t scanner_command_data_q;
 
 static cyhal_i2c_t glb_i2c;
 static cyhal_i2c_cfg_t i2c_cfg = {
@@ -91,25 +89,23 @@ int main()
     (void)result;
 
     /* Enable global interrupts. */
-
     init_i2c();
     __enable_irq();
     init_motors();
 
-    // probe();
-
     /* Initialize a queue to receive command. */
     cy_rtos_queue_init(&meas_q, 100u, sizeof(measurement_batch));
-    cy_rtos_queue_init(&scanner_command_data_q, 1u, sizeof(scanner_command_data_t));
 
     /* If the task creation failed stop the program execution */
     CY_ASSERT(result == CY_RSLT_SUCCESS);
 
     /* Create the tasks. */
-    result = create_tcp_task();
+    result = create_sample_publisher_task();
+    CY_ASSERT(result == CY_RSLT_SUCCESS);
     result = create_mag_task(&glb_i2c, &i2c_semaphore);
-    // result = create_lidar_task(&glb_i2c,&i2c_semaphore);
+    CY_ASSERT(result == CY_RSLT_SUCCESS);
     result = create_scanner_task(&glb_i2c, &i2c_semaphore);
+    CY_ASSERT(result == CY_RSLT_SUCCESS);
 
     /* Start the FreeRTOS scheduler. */
     vTaskStartScheduler();

@@ -1,6 +1,6 @@
 
-#ifndef MOTOR_H
-#define MOTOR_H
+#ifndef STEPPER_MOTOR_ULN2003_H
+#define STEPPER_MOTOR_ULN2003_H
 
 #include "cybsp.h"
 

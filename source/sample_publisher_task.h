@@ -1,5 +1,9 @@
-#ifndef TCP_SERVER_H_
-#define TCP_SERVER_H_
+#ifndef SAMPLE_PUBLISHER_TASK_H_
+#define SAMPLE_PUBLISHER_TASK_H_
+
+#include "cyhal.h"
+#include "cybsp.h"
+#include "FreeRTOS.h"
 
 #define BATCH_SIZE 32
 
@@ -16,9 +20,9 @@ typedef measurement measurement_batch[BATCH_SIZE];
 /*******************************************************************************
 * Function Prototypes
 ********************************************************************************/
-void tcp_server_task(void *arg);
+void sample_publisher_task(void *arg);
 
 cy_rslt_t init_wifi();
-cy_rslt_t create_tcp_task();
+cy_rslt_t create_sample_publisher_task();
 
-#endif /* TCP_SERVER_H_ */
+#endif 

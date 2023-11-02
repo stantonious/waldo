@@ -1,6 +1,6 @@
 
-#ifndef LIDAR_H
-#define LIDAR_H
+#ifndef TF_LUNA_H
+#define TF_LUNA_H
 
 #include "FreeRTOS.h"
 #include "cyhal.h"
