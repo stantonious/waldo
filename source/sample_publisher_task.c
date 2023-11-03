@@ -558,7 +558,7 @@ cy_rslt_t init_wifi()
 cy_rslt_t create_sample_publisher_task()
 {
     BaseType_t status;
-    cy_rslt_t result;
+    cy_rslt_t result = CY_RSLT_SUCCESS;
 
     /* Initialize the User LED */
     result = cyhal_gpio_init(CYBSP_USER_LED, CYHAL_GPIO_DIR_OUTPUT,

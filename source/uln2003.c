@@ -63,19 +63,9 @@ cy_rslt_t init_motors()
         /* Initialize the user button */
         result = cyhal_gpio_init(yz_motor_pins[i], CYHAL_GPIO_DIR_OUTPUT,
                                  CYHAL_GPIO_DRIVE_PULLUP, 0);
-        // result = cyhal_gpio_configure(yz_motor_pins[i], CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_PULLUP);
-        if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
-        {
-            // printf("gio failed");
-        }
         cyhal_gpio_write(yz_motor_pins[i], 0);
-        // result = cyhal_gpio_init(xy_motor_pins[i], CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_PULLUP, 0);
         result = cyhal_gpio_configure(xy_motor_pins[i], CYHAL_GPIO_DIR_OUTPUT, CYHAL_GPIO_DRIVE_PULLUP);
         cyhal_gpio_write(xy_motor_pins[i], 0);
-        if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
-        {
-            // printf("gio failed");
-        }
     }
 
     return result;

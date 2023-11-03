@@ -13,6 +13,8 @@ typedef struct {
     float x;
     float y;
     float z;
+    uint16_t xy_dir;
+    uint16_t yz_dir;
 }measurement;
 
 typedef measurement measurement_batch[BATCH_SIZE];

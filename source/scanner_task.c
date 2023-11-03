@@ -1,6 +1,7 @@
 
 #include "scanner_task.h"
 #include "uln2003.h"
+#include "tli493d-w2bw.h"
 #include "cy_pdl.h"
 #include "cyhal.h"
 #include "cyabs_rtos.h"
@@ -63,40 +64,33 @@ cy_rslt_t create_scanner_task(cyhal_i2c_t *i2c, SemaphoreHandle_t *sema)
 #define XY_RUN true
 #define XY_DIR true
 // #define XY_STEP_PERIOD YZ_PERIOD * 2    // 2 full cycle 2 channels (up/down)
-#define XY_STEP_PERIOD 4
+#define XY_STEP_PERIOD 512
 #define XY_PERIOD XY_STEP_PERIOD * 4096 // full 360
 #define TOTAL_STEPS XY_PERIOD           // run 1 full xy period
 
-#define STEP_DELAY 5
+#define STEP_DELAY 10
 
 static void scanner_task(void *pvParameters)
 {
     void **args = pvParameters;
     cyhal_i2c_t *i2c = (cyhal_i2c_t *)args[0];
-    SemaphoreHandle_t *sema = args[1];
     uint8_t yz_step_idx = 0;
     uint8_t xy_step_idx = 0;
     float dist = 0.;
-    scanner_command_data_t scanner_cmd;
 
-    // Auto align
-    // cy_rslt_t result;
-    // result = cy_rtos_get_queue(&scanner_command_data_q, &scanner_cmd, CY_RTOS_NEVER_TIMEOUT, false);
     // Time for network to init
     vTaskDelay(10000);
+    // Auto align
     auto_align(&xy_step_idx, &yz_step_idx);
 
     for (;;)
     {
-        // xy_step_idx = step_anticlockwise(xy_step_idx, XY_MOTOR_ID);
-        // xSemaphoreTake(*sema, portMAX_DELAY);
-        // xSemaphoreGive(*sema);
         run_motors(i2c, xy_step_idx, yz_step_idx, TOTAL_STEPS, XY_RUN, YZ_RUN, XY_PERIOD, YZ_PERIOD, XY_STEP_PERIOD, YZ_STEP_PERIOD, XY_DIR, YZ_DIR, STEP_DELAY);
         printf("dist %f", dist);
     }
 }
 
-#define STEP_SIZE 32
+#define STEP_SIZE 8
 void auto_align(uint8_t *xy_step_idx, uint8_t *yz_step_idx)
 {
     float last_r = -1;
@@ -107,26 +101,34 @@ void auto_align(uint8_t *xy_step_idx, uint8_t *yz_step_idx)
     int arm_mag_idx = 0;
 
     int max_step_idx = -1;
-    int num_steps = 4096 / STEP_SIZE;
+    //int num_steps = 4096 / STEP_SIZE;
+    int num_steps = 4096 / STEP_SIZE /2;
+
 
     for (int _xy_step = 0; _xy_step < num_steps; _xy_step++)
     {
-        *xy_step_idx = step(*xy_step_idx, XY_MOTOR_ID, false, STEP_SIZE);
+        *xy_step_idx = step(*xy_step_idx, XY_MOTOR_ID, true, STEP_SIZE);
+        float x = get_X();
+        float y = get_Y();
+        float z = get_Z();
         if (get_R() > xy_max_r)
         {
             xy_max_r = get_R();
             max_step_idx = _xy_step;
-            printf("MAX %f", xy_max_r);
         }
     }
 
     arm_mag_idx = (max_step_idx + (num_steps / 2)) % num_steps;
 
+    //int rev_steps = (num_steps - max_step_idx) + (4096 / STEP_SIZE / 2);
+    int rev_steps = (num_steps - max_step_idx) + (4096 / STEP_SIZE / 2);
+
     // print('idx', max_step_idx, arm_mag_idx, num_steps, num_steps - arm_mag_idx)
 
-    for (int _xy_rev_step = 0; _xy_rev_step < (num_steps - arm_mag_idx); _xy_rev_step++)
+    //for (int _xy_rev_step = 0; _xy_rev_step < (num_steps - arm_mag_idx); _xy_rev_step++)
+    for (int _xy_rev_step = 0; _xy_rev_step < rev_steps; _xy_rev_step++)
     {
-        *xy_step_idx = step(*xy_step_idx, XY_MOTOR_ID, true, STEP_SIZE);
+        *xy_step_idx = step(*xy_step_idx, XY_MOTOR_ID, false, STEP_SIZE);
     }
 
     // align yz
@@ -261,12 +263,12 @@ void run_motors(
 
         if (xy_stepped)
         {
-            xy_steps_in_dir += (xy_dir == xy_dir ? 1 : -1);
+            xy_steps_in_dir += (xy_dir == xy_direction ? 1 : -1);
         }
         if (yz_stepped)
         {
 
-            yz_steps_in_dir += (yz_dir == yz_dir ? 1 : -1);
+            yz_steps_in_dir += (yz_dir == yz_direction ? 1 : -1);
         }
 
         float xy_rads_in_dir = DEG_TO_RAD(xy_steps_in_dir * DEG_PER_STEP);
@@ -294,6 +296,8 @@ void run_motors(
         meas_batch[num_meas].x = x;
         meas_batch[num_meas].y = y;
         meas_batch[num_meas].z = z;
+        meas_batch[num_meas].xy_dir = yz_dir;
+        meas_batch[num_meas].yz_dir = xy_dir;
 
         num_meas++;
 

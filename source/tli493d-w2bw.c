@@ -35,7 +35,7 @@ cy_rslt_t init_sensor(cyhal_i2c_t *i2c, cyhal_gpio_event_callback_t cb)
     result = cyhal_gpio_init(MAG_GPIO, CYHAL_GPIO_DIR_INPUT, CYHAL_GPIO_DRIVE_PULLUP, 1);
     if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
     {
-        printf("doh");
+        result = CY_RSLT_TYPE_ERROR;
     }
     cyhal_gpio_register_callback(MAG_GPIO, &mag_cb_t);
     cyhal_gpio_enable_event(MAG_GPIO, CYHAL_GPIO_IRQ_FALL, 7u, true);
@@ -44,7 +44,7 @@ cy_rslt_t init_sensor(cyhal_i2c_t *i2c, cyhal_gpio_event_callback_t cb)
     result = cyhal_i2c_master_mem_write(i2c, MAG_ADDR, MAG_CONF_ADDR, 1, cmd, 1, 0);
     if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
     {
-        printf("doh");
+        result = CY_RSLT_TYPE_ERROR;
     }
 
     cmd[0] = 0b00011001;
@@ -52,13 +52,13 @@ cy_rslt_t init_sensor(cyhal_i2c_t *i2c, cyhal_gpio_event_callback_t cb)
     result = cyhal_i2c_master_mem_write(i2c, MAG_ADDR, MAG_MOD1_ADDR, 1, cmd, 1, 0);
     if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
     {
-        printf("doh");
+        result = CY_RSLT_TYPE_ERROR;
     }
 
     result = cyhal_i2c_master_write(i2c, MAG_ADDR, &TRIG_BYTE, 1, 0, true);
     if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
     {
-        printf("doh");
+        result = CY_RSLT_TYPE_ERROR;
     }
 
     return result;
@@ -72,7 +72,7 @@ void update_mag_vals(cyhal_i2c_t *i2c)
     result = cyhal_i2c_master_read(i2c, MAG_ADDR, buf, 23, 10, true);
     if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
     {
-        //   printf("doh");
+        result = CY_RSLT_TYPE_ERROR;
     }
     else
     {
@@ -103,16 +103,18 @@ void update_mag_vals(cyhal_i2c_t *i2c)
         N = sqrt(pow(X, 2) + pow(Y, 2) + pow(Z, 2)) * FULL_MULT;
         X = _X * FULL_MULT;
         Y = _Y * FULL_MULT;
+        Z = _Z * FULL_MULT;
         T = _T;
         T = (T - TEMP_OFFSET) * TEMP_MULT + TEMP_25;
 
         azimuth = atan2((float)Y, (float)X);
         polar = atan2((float)Z, sqrt(pow((float)X, 2) + pow((float)Y, 2)));
     }
-    result = cyhal_i2c_master_write(i2c, MAG_ADDR, &TRIG_BYTE, 1, 0, true);
-    if ((cy_rslt_t)result != CY_RSLT_SUCCESS)
+    result = 1;
+    while (result != CY_RSLT_SUCCESS)
     {
-        printf("doh");
+        result = cyhal_i2c_master_write(i2c, MAG_ADDR, &TRIG_BYTE, 1, 1, true);
+
     }
 }
 

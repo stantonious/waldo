@@ -4,6 +4,7 @@
 #include "cybsp.h"
 #include "cy_retarget_io.h"
 #include "mag_task.h"
+#include "uln2003.h"
 #include "scanner_task.h"
 #include "sample_publisher_task.h"
 
