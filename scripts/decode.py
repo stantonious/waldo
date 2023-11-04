@@ -9,6 +9,7 @@ with open('/tmp/a.out','rb') as f:
   for i in range(0,num_bytes//MEASLEN):
     idx = i * MEASLEN 
     xy,yz,x,y,z,xydir,yzdir = struct.unpack('<iifffhh',d[idx:idx+MEASLEN]) 
-    #print(xy,yz,x,y,z)
+    #if (yzdir): print(f'{x},{y},{z}')
     print(f'{x},{y},{z}')
+      #print(xy,yz,x,y,z)
 

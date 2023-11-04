@@ -40,7 +40,7 @@ uint8_t step_anticlockwise(uint8_t step_idx, int motor_id);
 * @param step_idx Step index
 * @param motor_id The id of the motor
 * @param clockwise The motor direction
-* @param num The num steps
+* @param num The
 *
 * @return The next step index
 */

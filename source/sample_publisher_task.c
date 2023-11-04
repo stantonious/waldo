@@ -47,8 +47,8 @@
  * Note: Maximum length of the Wi-Fi SSID and password is set to
  * CY_WCM_MAX_SSID_LEN and CY_WCM_MAX_PASSPHRASE_LEN as defined in cy_wcm.h file.
  */
-#define WIFI_SSID "stanton24"
-#define WIFI_PASSWORD "B00BF00D77"
+#define WIFI_SSID "xxxxxxxxx"
+#define WIFI_PASSWORD "xxxxxxxxxx"
 
 /* Security type of the Wi-Fi access point. See 'cy_wcm_security_t' structure
  * in "cy_wcm.h" for more details.

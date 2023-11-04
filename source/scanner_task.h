@@ -20,8 +20,29 @@
  ********************************************************************************/
 cy_rslt_t create_scanner_task(cyhal_i2c_t *i2c, SemaphoreHandle_t *i2c_semaphore);
 
+/*
+ * @brief Autonomous alignmen
+ *
+ * @param xy_step_idx Starting xy step index
+ * @param yz_step_idx Starting yz step index
+ */
 void auto_align(uint8_t *xy_step_idx, uint8_t *yz_step_idx);
 
+/*
+ * @brief Main run loop for motor activity and scan pattern
+ *
+ * @param i2c i2c handle
+ * @param starting_xy_step_idx Starting xy step index
+ * @param starting_yz_step_idx Starting yz step index
+ * @param total_steps Total number of motor steps
+ * @param xy_run XY run
+ * @param yz_run YZ run
+ * @param xy_step_period Number of steps between direction switch
+ * @param yz_step_period Number of steps between direction switch
+ * @param xy_direction initial direction of xy
+ * @param yz_direction initial direction of yz`
+ * @param step_sleep sleep between steps
+ */
 void run_motors(
     cyhal_i2c_t *i2c,
     uint8_t starting_xy_step_idx,
@@ -37,6 +58,16 @@ void run_motors(
     bool yz_direction,
     uint16_t step_sleep);
 
+/*
+ * @brief Process lidar data for step
+ *
+ * @param period_idx The period index
+ * @param period The current period
+ * @param step_period The current step period
+ * @param motor_id Motor identifier
+ * @param step_idx current step_index
+ * @param stepped true if stepped
+ */
 void process_step(
     uint32_t period_idx,
     uint32_t period,
