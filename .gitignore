@@ -8,3 +8,4 @@ libs/
 *.code-workspace
 opencd.tcl
 templates/
+COMPONENT_*/
